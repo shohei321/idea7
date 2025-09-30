@@ -1,5 +1,6 @@
 // server/api/gemini.ts
-import { defineEventHandler, readBody, useRuntimeConfig } from 'h3';
+import { defineEventHandler, readBody } from 'h3';
+import { useRuntimeConfig } from '#imports';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export default defineEventHandler(async (event) => {
