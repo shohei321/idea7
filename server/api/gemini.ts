@@ -12,6 +12,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const config = useRuntimeConfig();
+  console.log('Runtime config:', config);
   const genAI = new GoogleGenerativeAI(config.GOOGLE_API_KEY);
   const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
