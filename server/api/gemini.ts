@@ -16,7 +16,10 @@ export default defineEventHandler(async (event) => {
   const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
   try {
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent({
+  contents: [{ parts: [{ text: prompt }] }]
+});
+
     return result.toJSON();
   } catch (error) {
     return { error: error.message || 'Gemini API error' };
