@@ -17,11 +17,21 @@ export default defineEventHandler(async (event) => {
 
   try {
     const result = await model.generateContent({
-  contents: [{ parts: [{ text: prompt }] }]
-});
+      contents: [{ parts: [{ text: prompt }] }]
+    });
 
-    return result.toJSON();
+    const json = result.toJSON();
+    console.log('Prompt:', prompt);
+    console.log('Gemini response:', JSON.stringify(json, null, 2));
+
+    if (json.error) {
+      console.error('Gemini API error:', json.error);
+      return { error: json.error };
+    }
+
+    return json;
   } catch (error) {
+    console.error('Gemini API exception:', error);
     return { error: error.message || 'Gemini API error' };
   }
 });

@@ -160,10 +160,10 @@ const generateIdea = async (mode) => {
     generatedIdea.value = text; // 一時的にそのまま表示
 
 
-    const questionMatch = text.match(/問い[:：]\s*(.+)/);
+const questionMatch = text.match(/(問い|質問|Q)[:：]\s*(.+)/);
     const examplesMatch = text.match(/例[:：]\s*\n([\s\S]*)/);
 
-    generatedIdea.value = questionMatch ? questionMatch[1].trim() : '問いが見つかりませんでした';
+generatedIdea.value = questionMatch ? questionMatch[2].trim() : text;
     generatedExamples.value = examplesMatch
       ? examplesMatch[1]
           .split(/\n/)
