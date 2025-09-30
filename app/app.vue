@@ -156,6 +156,9 @@ const generateIdea = async (mode) => {
     });
     const data = await response.json();
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'APIレスポンスが不正です';
+    console.log('Gemini raw output:', text); // ← 追加
+    generatedIdea.value = text; // 一時的にそのまま表示
+
 
     const questionMatch = text.match(/問い[:：]\s*(.+)/);
     const examplesMatch = text.match(/例[:：]\s*\n([\s\S]*)/);
