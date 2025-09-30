@@ -13,7 +13,7 @@ export default defineNuxtConfig({
   ],
 
   runtimeConfig: {
-    GOOGLE_API_KEY: '', // Vercelの環境変数から読み込まれる
+    GOOGLE_API_KEY: process.env.NUXT_GOOGLE_API_KEY || '',
     public: {} // クライアント側で使う変数があればここに
   }
 })
