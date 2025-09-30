@@ -149,7 +149,7 @@ const generateIdea = async (mode) => {
   
 
   try {
-    const response = await fetch('http://localhost:3001/api/gemini', {
+    const response = await fetch('/api/gemini', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt }),
