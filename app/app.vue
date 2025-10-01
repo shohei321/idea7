@@ -149,11 +149,16 @@ const generateIdea = async (mode) => {
   
 
   try {
-    const response = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
-    });
+    const apiBase =
+  process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '';
+
+const response = await fetch(`${apiBase}/api/gemini`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ prompt }),
+});
+
+    
     const data = await response.json();
     const text = data?.text || 'APIレスポンスが不正です';
     console.log('Gemini raw output:', text); // ← 追加
