@@ -9,15 +9,15 @@
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
     <div class="buttons">
-  <button @click="generateIdea('reverse')">逆転</button>
-  <button @click="generateIdea('expansion')">拡張</button>
-  <button @click="generateIdea('associate')">連想</button>
-  <button @click="generateIdea('perspective')">視点切替</button>
-  <button @click="generateIdea('future')">未来</button>
-  <button @click="generateIdea('constraint')">制約</button>
-  <button @click="generateIdea('emotion')">感情</button>
-  <button @click="generateIdea('random')">ランダム</button>
-</div>
+      <button @click="generateIdea('reverse')">逆転</button>
+      <button @click="generateIdea('expansion')">拡張</button>
+      <button @click="generateIdea('associate')">連想</button>
+      <button @click="generateIdea('perspective')">視点切替</button>
+      <button @click="generateIdea('future')">未来</button>
+      <button @click="generateIdea('constraint')">制約</button>
+      <button @click="generateIdea('emotion')">感情</button>
+      <button @click="generateIdea('random')">ランダム</button>
+    </div>
 
     <div v-if="isLoading" class="loading-area">
       <p>AIが考え中です…</p>
@@ -26,6 +26,7 @@
     <div v-if="generatedIdea && !isLoading" class="idea-area">
       <h2>問い（{{ currentModeLabel }}）</h2>
       <p>{{ generatedIdea }}</p>
+      <small class="idea-reason" v-if="generatedReason">※理由：{{ generatedReason }}</small>
     </div>
 
     <div v-if="generatedIdea" class="my-idea-area">
@@ -57,6 +58,7 @@
           <li v-for="(idea, index) in savedIdeas[selectedTheme]" :key="index">
             <div class="idea-content">
               <strong class="question">問い（{{ idea.mode }}）: {{ idea.question }}</strong>
+              <p class="reason" v-if="idea.reason">※理由：{{ idea.reason }}</p>
               <p class="answer">アイデア: {{ idea.text }}</p>
             </div>
             <button @click.stop="deleteIdea(selectedTheme, index)" class="delete-btn">削除</button>
@@ -73,6 +75,7 @@ import { ref, onMounted, watch } from 'vue';
 
 const inputText = ref('');
 const generatedIdea = ref('');
+const generatedReason = ref('');
 const generatedExamples = ref([]);
 const myIdeaText = ref('');
 const currentTheme = ref('');
@@ -86,6 +89,7 @@ const generateIdea = async (mode) => {
   if (!inputText.value) {
     errorMessage.value = 'キーワードを入力してください。';
     generatedIdea.value = '';
+    generatedReason.value = '';
     generatedExamples.value = [];
     return;
   }
@@ -94,103 +98,57 @@ const generateIdea = async (mode) => {
   isLoading.value = true;
 
   const modeLabels = {
-  reverse: '逆転',
-  expansion: '拡張',
-  associate: '連想',
-  perspective: '視点切替',
-  future: '未来',
-  constraint: '制約',
-  emotion: '感情'
-};
+    reverse: '逆転',
+    expansion: '拡張',
+    associate: '連想',
+    perspective: '視点切替',
+    future: '未来',
+    constraint: '制約',
+    emotion: '感情'
+  };
 
   let executionMode = mode;
   if (mode === 'random') {
-  const modes = ['reverse', 'expansion', 'associate', 'perspective', 'future', 'constraint', 'emotion'];
-  executionMode = modes[Math.floor(Math.random() * modes.length)];
-}
+    const modes = Object.keys(modeLabels);
+    executionMode = modes[Math.floor(Math.random() * modes.length)];
+  }
   currentModeLabel.value = modeLabels[executionMode] || '';
 
+  const intro = `あなたは、ユーザーが入力したキーワード（課題・悩み・アイデアの種）に対して、ユーザー自身が良いアイデアを思い浮かべられるように、思考のきっかけとなる問いをやさしく提示するロボットです。\n\n`;
 
-  let prompt = '';
-const intro = `あなたは、ユーザーが入力したキーワード（課題・悩み・アイデアの種）に対して、ユーザー自身が良いアイデアを思い浮かべられるように、思考のきっかけとなる問いをやさしく提示するロボットです。\n\n`;
+  const format = {
+    reverse: `問い:（50文字以内で）\n理由:（問いの背景や逆転の視点を20〜40文字で）\n例:（80文字以内の答えを3つ、番号付きで）`,
+    expansion: `問い:（50文字以内で）（応用分野には「」を付ける）\n理由:（どのような応用や分野を意識したかを20〜40文字で）\n例:（80文字以内の答えを3つ、番号付きで）`,
+    associate: `問い:（50文字以内で）（単語には「」を付ける）\n理由:（どの単語を連想し、なぜ掛け合わせたかを20〜40文字で）\n例:（80文字以内の答えを3つ、番号付きで）`,
+    perspective: `問い:（50文字以内で）\n理由:（どの視点に切り替えたか、なぜその視点かを20〜40文字で）\n例:（80文字以内の答えを3つ、番号付きで）`,
+    future: `問い:（50文字以内で）（未来の要素には「」を付ける）\n理由:（どんな未来を想定したか、なぜその未来かを20〜40文字で）\n例:（80文字以内の答えを3つ、番号付きで）`,
+    constraint: `問い:（50文字以内で）（制約には「」を付ける）\n理由:（どんな制約を設けたか、なぜその制約かを20〜40文字で）\n例:（80文字以内の答えを3つ、番号付きで）`,
+    emotion: `問い:（50文字以内で）（感情には「」を付ける）\n理由:（どの感情を選び、なぜその感情かを20〜40文字で）\n例:（80文字以内の答えを3つ、番号付きで）`
+  };
 
-if (executionMode === 'reverse') {
-  prompt = `${intro}「${inputText.value}」というキーワードに対して、常識や前提を逆転させた視点から、思考を促す問いを1つ新たに作成してください（やわらかい文章で）。前の問いはリセットし、内容を引き継がないようにしてください。
-
-出力形式は以下のようにしてください：
-問い:（50文字以内で）
-例:（80文字以内の答えを3つ、番号付きで）`;
-}
-
-else if (executionMode === 'expansion') {
-  prompt = `${intro}「${inputText.value}」というキーワードについて、他の分野や用途に応用・拡張することで、思考を促す問いを1つ新たに作成してください（やわらかい文章で）。前の問いはリセットし、内容を引き継がないようにしてください。
-
-出力形式は以下のようにしてください：
-問い:（50文字以内で）（応用分野には「」を付ける）
-例:（80文字以内の答えを3つ、番号付きで）`;
-}
-
-else if (executionMode === 'associate') {
-  prompt = `${intro}「${inputText.value}」というキーワードに対して、キーワード内の単語をひとつを取り出して連想される単語を1つ掛け合わせて、思考を促す問いを1つ新たに作成してください（やわらかい文章で）。前の問いはリセットし、内容を引き継がないようにしてください。
-
-出力形式は以下のようにしてください：
-問い:（50文字以内で）（単語には「」を付ける）
-例:（80文字以内の答えを3つ、番号付きで）`;
-}
-
-else if (executionMode === 'perspective') {
-  prompt = `${intro}「${inputText.value}」というテーマについて、立場や視点を切り替えて考えることで、新たな発想を促す問いを1つ作成してください（やわらかい文章で）。たとえば「子どもだったら？」「外国人だったら？」「動物だったら？」など、視点の転換を活かしてください。
-
-出力形式は以下のようにしてください：
-問い:（50文字以内で）
-例:（80文字以内の答えを3つ、番号付きで）`;
-}
-
-else if (executionMode === 'future') {
-  prompt = `${intro}「${inputText.value}」というテーマについて、未来の技術や社会、価値観の変化を想定しながら、思考を促す問いを1つ作成してください（やわらかい文章で）。10年後、50年後など、時間軸をずらして考えてください。
-
-出力形式は以下のようにしてください：
-問い:（50文字以内で）（未来の要素には「」を付ける）
-例:（80文字以内の答えを3つ、番号付きで）`;
-}
-
-else if (executionMode === 'constraint') {
-  prompt = `${intro}「${inputText.value}」というテーマについて、制限や条件を設けることで、創造性を引き出す問いを1つ作成してください（やわらかい文章で）。たとえば「予算が100円しかない」「時間が5分しかない」「道具が使えない」など、制約を活かしてください。
-
-出力形式は以下のようにしてください：
-問い:（50文字以内で）（制約には「」を付ける）
-例:（80文字以内の答えを3つ、番号付きで）`;
-}
-
-else if (executionMode === 'emotion') {
-  prompt = `${intro}「${inputText.value}」というテーマについて、特定の感情（不安・喜び・怒り・期待など）を通して考えることで、思考を促す問いを1つ作成してください（やわらかい文章で）。感情の視点を明示してください。
-
-出力形式は以下のようにしてください：
-問い:（50文字以内で）（感情には「」を付ける）
-例:（80文字以内の答えを3つ、番号付きで）`;
-}
-
-  
+  const prompt = `${intro}「${inputText.value}」というキーワードに対して、${modeLabels[executionMode]}の視点から問いを作成してください。\n\n出力形式は以下のようにしてください：\n${format[executionMode]}`;
 
   try {
-    const apiBase =
-  process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '';
+    const apiBase = process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '';
+    const response = await fetch(`${apiBase}/api/gemini`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
 
-const response = await fetch(`${apiBase}/api/gemini`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ prompt }),
-});
-
-    
     const data = await response.json();
     const text = data?.text || 'APIレスポンスが不正です';
-    console.log('Gemini raw output:', text); // ← 追加
-    generatedIdea.value = text; // 一時的にそのまま表示
+    console.log('Gemini raw output:', text);
 
-
-const questionMatch = text.match(/(問い|質問|Q)[:：]\s*(.+)/);
+    const questionMatch = text.match(/(問い|質問|Q)[:：]\s*(.+)/);
+    const reasonMatch = text.match(/理由[:：]\s*(.+)/);
     const examplesMatch = text.match(/例[:：]\s*\n([\s\S]*)/);
+
+
+
+
+
+
 
 generatedIdea.value = questionMatch ? questionMatch[2].trim() : text;
     generatedExamples.value = examplesMatch
