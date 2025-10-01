@@ -12,8 +12,6 @@ export default defineEventHandler(async (event) => {
   }
 
   const config = useRuntimeConfig();
-  console.log('Runtime config:', config);
-
   const genAI = new GoogleGenerativeAI(config.GOOGLE_API_KEY);
   const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash' });
 
@@ -24,9 +22,6 @@ export default defineEventHandler(async (event) => {
 
     const response = await result.response;
     const text = response.text();
-
-    console.log('Prompt:', prompt);
-    console.log('Gemini response:', text);
 
     return { text };
   } catch (error) {
