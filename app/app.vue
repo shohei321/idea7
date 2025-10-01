@@ -163,7 +163,7 @@ else if (executionMode === 'constraint') {
 }
 
 else if (executionMode === 'emotion') {
-  prompt = `${intro}「${inputText.value}」というテーマについて、特定の感情（不安・喜び・怒り・期待など）を通して考えることで、思考を促す問いを1つ作成してください。感情の視点を明示してください。
+  prompt = `${intro}「${inputText.value}」というテーマについて、特定の感情（不安・喜び・怒り・期待など）を通して考えることで、思考を促す問いを1つ作成してください。
 
 出力形式は以下のようにしてください：
 問い:（50文字以内で）（感情には「」を付ける）
