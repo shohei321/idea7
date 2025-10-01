@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig();
   console.log('Runtime config:', config);
+
   const genAI = new GoogleGenerativeAI(config.GOOGLE_API_KEY);
   const model = genAI.getGenerativeModel({ model: 'models/gemini-1.5-flash' });
 
@@ -21,16 +22,13 @@ export default defineEventHandler(async (event) => {
       contents: [{ parts: [{ text: prompt }] }]
     });
 
-    const json = result.toJSON();
+    const response = await result.response;
+    const text = response.text();
+
     console.log('Prompt:', prompt);
-    console.log('Gemini response:', JSON.stringify(json, null, 2));
+    console.log('Gemini response:', text);
 
-    if (json.error) {
-      console.error('Gemini API error:', json.error);
-      return { error: json.error };
-    }
-
-    return json;
+    return { text };
   } catch (error) {
     console.error('Gemini API exception:', error);
     return { error: error.message || 'Gemini API error' };
