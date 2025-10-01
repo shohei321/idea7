@@ -9,11 +9,15 @@
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
     <div class="buttons">
-      <button @click="generateIdea('reverse')">逆転</button>
-      <button @click="generateIdea('imagination')">架空</button>
-      <button @click="generateIdea('associate')">連想</button>
-      <button @click="generateIdea('random')">ランダム</button>
-    </div>
+  <button @click="generateIdea('reverse')">逆転</button>
+  <button @click="generateIdea('expansion')">拡張</button>
+  <button @click="generateIdea('associate')">連想</button>
+  <button @click="generateIdea('perspective')">視点切替</button>
+  <button @click="generateIdea('future')">未来</button>
+  <button @click="generateIdea('constraint')">制約</button>
+  <button @click="generateIdea('emotion')">感情</button>
+  <button @click="generateIdea('random')">ランダム</button>
+</div>
 
     <div v-if="isLoading" class="loading-area">
       <p>AIが考え中です…</p>
@@ -90,16 +94,20 @@ const generateIdea = async (mode) => {
   isLoading.value = true;
 
   const modeLabels = {
-    reverse: '逆転',
-    imagination: '架空',
-    associate: '連想'
-  };
+  reverse: '逆転',
+  expansion: '拡張',
+  associate: '連想',
+  perspective: '視点切替',
+  future: '未来',
+  constraint: '制約',
+  emotion: '感情'
+};
 
   let executionMode = mode;
   if (mode === 'random') {
-    const modes = ['reverse', 'imagination', 'associate'];
-    executionMode = modes[Math.floor(Math.random() * modes.length)];
-  }
+  const modes = ['reverse', 'expansion', 'associate', 'perspective', 'future', 'constraint', 'emotion'];
+  executionMode = modes[Math.floor(Math.random() * modes.length)];
+}
   currentModeLabel.value = modeLabels[executionMode] || '';
 
 
@@ -118,8 +126,8 @@ const generateIdea = async (mode) => {
 3. 〜`;
 
 
-  } else if (executionMode === 'imagination') {
-    prompt = `「${inputText.value}」というキーワードで、空想の世界や架空の視点から、思考を促す問いを1つ新たに作成してください（やわらかい文章で）。前の問いはリセットし、内容を引き継がないようにしてください。
+  } else if (executionMode === 'expansion') {
+    prompt = `「${inputText.value}」というキーワードについて、他の分野や用途に応用・拡張することで、思考を促す問いを1つ新たに作成してください（やわらかい文章で）。前の問いはリセットし、内容を引き継がないようにしてください。
 
 出力形式は以下のようにしてください：
 問い:（50文字以内で）（空想部分に「」を付ける）
@@ -145,6 +153,70 @@ const generateIdea = async (mode) => {
 2. 〜
 3. 〜`;
   }
+
+  else if (executionMode === 'perspective') {
+  prompt = `あなたは、ユーザーが入力したキーワード（課題・悩み・アイデアの種）に対して、ユーザー自身が良いアイデアを思い浮かべられるように、思考のきっかけとなる問いをやさしく提示するロボットです。
+
+「${inputText.value}」というテーマについて、立場や視点を切り替えて考えることで、新たな発想を促す問いを1つ作成してください（やわらかい文章で）。たとえば「子どもだったら？」「外国人だったら？」「動物だったら？」など、視点の転換を活かしてください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）
+例:（80文字以内の答えを3つ、番号付きで）
+
+問い: 〜
+例:
+1. 〜
+2. 〜
+3. 〜`;
+}
+
+else if (executionMode === 'future') {
+  prompt = `あなたは、ユーザーが入力したキーワード（課題・悩み・アイデアの種）に対して、ユーザー自身が良いアイデアを思い浮かべられるように、思考のきっかけとなる問いをやさしく提示するロボットです。
+
+「${inputText.value}」というテーマについて、未来の技術や社会、価値観の変化を想定しながら、思考を促す問いを1つ作成してください（やわらかい文章で）。10年後、50年後など、時間軸をずらして考えてください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）（未来の要素には「」を付ける）
+例:（80文字以内の答えを3つ、番号付きで）
+
+問い: 〜
+例:
+1. 〜
+2. 〜
+3. 〜`;
+}
+
+else if (executionMode === 'constraint') {
+  prompt = `あなたは、ユーザーが入力したキーワード（課題・悩み・アイデアの種）に対して、ユーザー自身が良いアイデアを思い浮かべられるように、思考のきっかけとなる問いをやさしく提示するロボットです。
+
+「${inputText.value}」というテーマについて、制限や条件を設けることで、創造性を引き出す問いを1つ作成してください（やわらかい文章で）。たとえば「予算が100円しかない」「時間が5分しかない」「道具が使えない」など、制約を活かしてください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）（制約には「」を付ける）
+例:（80文字以内の答えを3つ、番号付きで）
+
+問い: 〜
+例:
+1. 〜
+2. 〜
+3. 〜`;
+}
+
+else if (executionMode === 'emotion') {
+  prompt = `あなたは、ユーザーが入力したキーワード（課題・悩み・アイデアの種）に対して、ユーザー自身が良いアイデアを思い浮かべられるように、思考のきっかけとなる問いをやさしく提示するロボットです。
+
+「${inputText.value}」というテーマについて、特定の感情（不安・喜び・怒り・期待など）を通して考えることで、思考を促す問いを1つ作成してください（やわらかい文章で）。感情の視点を明示してください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）（感情には「」を付ける）
+例:（80文字以内の答えを3つ、番号付きで）
+
+問い: 〜
+例:
+1. 〜
+2. 〜
+3. 〜`;
+}
 
   
 
