@@ -1,69 +1,3 @@
-<template>
-  <div class="container">
-    <h1>アイデアを出させるアプリ</h1>
-
-    <div class="input-area">
-      <input type="text" v-model="inputText" placeholder="キーワードを入力">
-    </div>
-
-    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-
-    <div class="buttons">
-      <button @click="generateIdea('reverse')">逆転</button>
-      <button @click="generateIdea('imagination')">架空</button>
-      <button @click="generateIdea('associate')">連想</button>
-      <button @click="generateIdea('random')">ランダム</button>
-    </div>
-
-    <div v-if="isLoading" class="loading-area">
-      <p>AIが考え中です…</p>
-    </div>
-
-    <div v-if="generatedIdea && !isLoading" class="idea-area">
-      <h2>問い（{{ currentModeLabel }}）</h2>
-      <p>{{ generatedIdea }}</p>
-    </div>
-
-    <div v-if="generatedIdea" class="my-idea-area">
-      <h2>あなたのアイデア</h2>
-      <textarea v-model="myIdeaText" placeholder="ここにアイデアを入力..."></textarea>
-      <button @click="saveIdea">登録</button>
-    </div>
-
-    <div v-if="generatedExamples.length" class="example-area">
-      <h2>例</h2>
-      <ul>
-        <li v-for="(example, index) in generatedExamples" :key="index">{{ example }}</li>
-      </ul>
-    </div>
-
-    <div class="saved-ideas-area">
-      <h2>テーマ一覧</h2>
-      <ul v-if="Object.keys(savedIdeas).length > 0">
-        <li v-for="theme in Object.keys(savedIdeas)" :key="theme" @click="selectTheme(theme)" :class="{ 'selected-theme': selectedTheme === theme }">
-          {{ theme }}
-          <button @click.stop="deleteTheme(theme)" class="delete-btn">テーマ削除</button>
-        </li>
-      </ul>
-      <p v-else>まだ保存されたテーマはありません。</p>
-
-      <div v-if="selectedTheme && savedIdeas[selectedTheme]?.length > 0" class="theme-ideas-list">
-        <h3>{{ selectedTheme }} のアイデア</h3>
-        <ul>
-          <li v-for="(idea, index) in savedIdeas[selectedTheme]" :key="index">
-            <div class="idea-content">
-              <strong class="question">問い（{{ idea.mode }}）: {{ idea.question }}</strong>
-              <p class="answer">アイデア: {{ idea.text }}</p>
-            </div>
-            <button @click.stop="deleteIdea(selectedTheme, index)" class="delete-btn">削除</button>
-          </li>
-        </ul>
-      </div>
-      <p v-else-if="selectedTheme">このテーマにはまだアイデアがありません。</p>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 
@@ -102,7 +36,6 @@ const generateIdea = async (mode) => {
   }
   currentModeLabel.value = modeLabels[executionMode] || '';
 
-
   let prompt = '';
   if (executionMode === 'reverse') {
     prompt = `「${inputText.value}」というキーワードに対して、常識や前提を逆転させた視点から、思考を促す問いを1つ新たに作成してください（やわらかい文章で）。前の問いはリセットし、内容を引き継がないようにしてください。
@@ -116,8 +49,6 @@ const generateIdea = async (mode) => {
 1. 〜
 2. 〜
 3. 〜`;
-
-
   } else if (executionMode === 'imagination') {
     prompt = `「${inputText.value}」というキーワードで、空想の世界や架空の視点から、思考を促す問いを1つ新たに作成してください（やわらかい文章で）。前の問いはリセットし、内容を引き継がないようにしてください。
 
@@ -130,8 +61,6 @@ const generateIdea = async (mode) => {
 1. 〜
 2. 〜
 3. 〜`;
-
-
   } else if (executionMode === 'associate') {
     prompt = `「${inputText.value}」というキーワードに対して、キーワード内の単語をひとつを取り出して連想される単語を1つ掛け合わせて、思考を促す問いを1つ新たに作成してください（やわらかい文章で）。前の問いはリセットし、内容を引き継がないようにしてください。
 
@@ -146,8 +75,6 @@ const generateIdea = async (mode) => {
 3. 〜`;
   }
 
-  
-
   try {
     const response = await fetch('/api/gemini', {
       method: 'POST',
@@ -156,14 +83,11 @@ const generateIdea = async (mode) => {
     });
     const data = await response.json();
     const text = data?.text || 'APIレスポンスが不正です';
-    console.log('Gemini raw output:', text); // ← 追加
-    generatedIdea.value = text; // 一時的にそのまま表示
 
-
-const questionMatch = text.match(/(問い|質問|Q)[:：]\s*(.+)/);
+    const questionMatch = text.match(/(問い|質問|Q)[:：]\s*(.+)/);
     const examplesMatch = text.match(/例[:：]\s*\n([\s\S]*)/);
 
-generatedIdea.value = questionMatch ? questionMatch[2].trim() : text;
+    generatedIdea.value = questionMatch ? questionMatch[2].trim() : text;
     generatedExamples.value = examplesMatch
       ? examplesMatch[1]
           .split(/\n/)
