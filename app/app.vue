@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1>アイデアを出させるアプリver19</h1>
+    <h1>アイデアを出させるアプリ</h1>
 
     <div class="input-area">
       <input type="text" v-model="inputText" placeholder="キーワードを入力">
