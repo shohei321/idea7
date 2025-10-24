@@ -1,31 +1,61 @@
 // server/api/gemini.ts
-import { defineEventHandler, readBody } from 'h3'; // h3からインポート
-import { useRuntimeConfig } from '#imports'; // useRuntimeConfigをインポート
-import { GoogleGenerativeAI } from '@google/generative-ai'; // Google Generative AIクライアントをインポート
+import { defineEventHandler, readBody } from 'h3';
 
-export default defineEventHandler(async (event) => { // イベントハンドラを定義
-  const body = await readBody(event); // リクエストボディを読み取る
-  const prompt = body.prompt; // プロンプトを取得
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
-  if (!prompt) {  // プロンプトがない場合のエラーハンドリング
-    return { error: 'No prompt provided' }; // エラーメッセージを返す
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event);
+  const prompt = body?.prompt;
+
+  if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
+    return { error: 'プロンプトが空です' };
   }
 
-  const config = useRuntimeConfig(); // ランタイム設定を取得
-  const genAI = new GoogleGenerativeAI(config.GOOGLE_API_KEY); // Google Generative AIクライアントを初期化
-  const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash' }); // Geminiモデルを取得
+  const API_KEY = process.env.GOOGLE_API_KEY || '';
+  if (!API_KEY) {
+    console.error('GOOGLE_API_KEY is not set in environment');
+    return { error: 'GOOGLE_API_KEY が設定されていません' };
+  }
 
-  try { // API呼び出しを試みる
-    const result = await model.generateContent({ // コンテンツ生成を呼び出す
-      contents: [{ parts: [{ text: prompt }] }] // プロンプトを渡す
+  try {
+    const url = `${GEMINI_API_URL}?key=${encodeURIComponent(API_KEY)}`;
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
     });
 
-    const response = await result.response; // レスポンスを取得
-    const text = response.text(); // テキストを抽出
+    const textBody = await r.text();
+    if (!textBody) return { error: 'Gemini APIから空のレスポンスが返されました' };
 
-    return { text }; // テキストを返す
-  } catch (error) { // エラーハンドリング
-    console.error('Gemini API exception:', error); // エラーログを出力
-    return { error: error.message || 'Gemini API error' }; // エラーメッセージを返す
+    let data;
+    try {
+      data = JSON.parse(textBody);
+    } catch {
+      return { error: 'レスポンスの解析に失敗しました', raw: textBody };
+    }
+
+    let outText = '';
+    if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      outText = data.candidates[0].content.parts[0].text;
+    } else if (data?.output?.[0]?.content?.parts?.[0]?.text) {
+      outText = data.output[0].content.parts[0].text;
+    } else if (data?.candidates?.[0]?.output?.[0]?.content?.parts?.[0]?.text) {
+      outText = data.candidates[0].output[0].content.parts[0].text;
+    } else if (typeof data === 'string') {
+      outText = data;
+    } else {
+      try {
+        const s = JSON.stringify(data);
+        outText = s.length > 2000 ? s.slice(0, 2000) + '... (truncated)' : s;
+      } catch {
+        outText = '';
+      }
+    }
+
+    return { text: outText, raw: data };
+  } catch (err) {
+    console.error('server/api/gemini error:', err);
+    return { error: err?.message || String(err) };
   }
 });
