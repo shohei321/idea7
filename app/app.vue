@@ -184,15 +184,33 @@ const response = await fetch(`${apiBase}/api/gemini`, {
 
     
     const data = await response.json();
-    const text = data?.text || 'APIレスポンスが不正です';
-    console.log('Gemini raw output:', text); // ← 追加
-    generatedIdea.value = text; // 一時的にそのまま表示
+    // 正規化されたプロキシ応答を期待: { text, raw }
+    let text = data?.text || '';
 
+    // フォールバック: proxy が正しく text を返していない場合は raw から抽出を試みる
+    if (!text && data?.raw) {
+      const raw = data.raw;
+      if (raw?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        text = raw.candidates[0].content.parts[0].text;
+      } else if (raw?.output?.[0]?.content?.parts?.[0]?.text) {
+        text = raw.output[0].content.parts[0].text;
+      } else {
+        try {
+          text = typeof raw === 'string' ? raw : JSON.stringify(raw);
+        } catch {
+          text = '';
+        }
+      }
+    }
 
-const questionMatch = text.match(/(問い|質問|Q)[:：]\s*(.+)/);
+    if (!text) text = 'APIレスポンスが不正です';
+    console.log('Gemini raw output:', text);
+
+    // まずは問いと例をテキストから抽出
+    const questionMatch = text.match(/(問い|質問|Q)[:：]\s*(.+)/);
     const examplesMatch = text.match(/例[:：]\s*\n([\s\S]*)/);
 
-generatedIdea.value = questionMatch ? questionMatch[2].trim() : text;
+    generatedIdea.value = questionMatch ? questionMatch[2].trim() : text;
     generatedExamples.value = examplesMatch
       ? examplesMatch[1]
           .split(/\n/)
@@ -229,7 +247,10 @@ const deleteIdea = (theme, index) => {
   if (savedIdeas.value[theme]) {
     savedIdeas.value[theme].splice(index, 1);
     if (savedIdeas.value[theme].length === 0) {
-      delete savedIdeas.value[theme];
+      // delete を避け、リアクティビティを保ったままオブジェクトを再作成する
+      savedIdeas.value = Object.fromEntries(
+        Object.entries(savedIdeas.value).filter(([k]) => k !== theme)
+      );
       if (selectedTheme.value === theme) selectedTheme.value = null;
     }
   }
@@ -237,7 +258,10 @@ const deleteIdea = (theme, index) => {
 
 const deleteTheme = (theme) => {
   if (confirm(`テーマ「${theme}」と、その中のすべてのアイデアを削除してもよろしいですか？`)) {
-    delete savedIdeas.value[theme];
+    // delete を使わずに安全に削除
+    savedIdeas.value = Object.fromEntries(
+      Object.entries(savedIdeas.value).filter(([k]) => k !== theme)
+    );
     if (selectedTheme.value === theme) selectedTheme.value = null;
   }
 };

@@ -1,26 +1,37 @@
-# Nuxt dev/build outputs
-.output
-.data
-.nuxt
-.nitro
-.cache
-dist
+# Node
+node_modules/
 
-# Node dependencies
-node_modules
+# Nuxt / build outputs
+.nuxt/
+.output/
+.nitro/
+.cache/
+dist/
+
+# Local env files (ignore all env files, but keep example)
+.env
+.env.*
+!.env.example
+
+# Local service account keys
+gen-lang-client-*.json
+*.service-account.json
+*.key.json
 
 # Logs
 logs
 *.log
 
-# Misc
+# OS files
 .DS_Store
-.fleet
-.idea
+Thumbs.db
 
-# Local env files
-.env
-.env.*
-!.env.example
+# IDE / editor
+.idea/
+.vscode/
+.fleet/
 
-gen-lang-client-0721799689-e13c31b3f915.json
+# Misc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
