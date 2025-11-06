@@ -4,10 +4,10 @@
 
     <div class="input-area">
       <div class="role-row">
-        <input v-model="userRole" class="role-input" type="text" placeholder="質問者の立場（例：学生・商品企画職）">
-        <input v-model="aiRole" class="role-input" type="text" placeholder="回答者の立場（例：先生・消費者）">
+        <input v-model="userRole" class="role-input" type="text" placeholder="質問者の立場（例：学生・起業家）">
+        <input v-model="aiRole" class="role-input" type="text" placeholder="回答者の立場（例：教育の専門家・哲学者）">
       </div>
-      <input type="text" v-model="inputText" placeholder="課題や悩みを入力してください（例：勉強に集中できない）">
+      <input type="text" v-model="inputText" placeholder="キーワードを入力">
     </div>
 
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
@@ -30,22 +30,19 @@
     <div v-if="generatedIdea && !isLoading" class="idea-area">
       <h2>問い（{{ currentModeLabel }}）</h2>
       <p>{{ generatedIdea }}</p>
-      <div v-if="generatedExamples.length">
-        <button class="examples-toggle" @click="showExamples = !showExamples">{{ showExamples ? 'ヒントを閉じる' : 'ヒントを見る' }}</button>
-      </div>
-    </div>
-
-    <div v-if="showExamples && generatedExamples.length" class="hint-area">
-      <h2>ヒント</h2>
-      <ul>
-        <li v-for="(example, index) in generatedExamples" :key="index">{{ example }}</li>
-      </ul>
     </div>
 
     <div v-if="generatedIdea" class="my-idea-area">
       <h2>あなたのアイデア</h2>
-  <textarea v-model="myIdeaText" placeholder="ここにアイデアを入力..." />
+      <textarea v-model="myIdeaText" placeholder="ここにアイデアを入力..."></textarea>
       <button @click="saveIdea">登録</button>
+    </div>
+
+    <div v-if="generatedExamples.length" class="example-area">
+      <h2>例</h2>
+      <ul>
+        <li v-for="(example, index) in generatedExamples" :key="index">{{ example }}</li>
+      </ul>
     </div>
 
     <div class="saved-ideas-area">
@@ -90,7 +87,6 @@ const isLoading = ref(false);
 const currentModeLabel = ref('');
 const userRole = ref('');
 const aiRole = ref('');
-const showExamples = ref(false);
 
 const generateIdea = async (mode) => {
   if (!inputText.value) {
@@ -118,8 +114,6 @@ const generateIdea = async (mode) => {
   const modes = ['reverse', 'expansion', 'associate', 'perspective', 'future', 'constraint', 'emotion'];
   executionMode = modes[Math.floor(Math.random() * modes.length)];
 }
-  // hide examples when starting a new generation
-  showExamples.value = false;
   currentModeLabel.value = modeLabels[executionMode] || '';
 
 
@@ -128,36 +122,64 @@ const intro = `あなたは、ユーザーが入力したキーワード（課�
 
 // 立場（任意）
 const roleParts = [];
-if (userRole.value && userRole.value.trim()) roleParts.push(`ユーザーは「${userRole.value.trim()}」の立場として考え、`);
-if (aiRole.value && aiRole.value.trim()) roleParts.push(`あなたは「${aiRole.value.trim()}」の視点から回答してください。口調もそれに合わせてください。`);
+if (userRole.value && userRole.value.trim()) roleParts.push(`質問者は「${userRole.value.trim()}」として考え、`);
+if (aiRole.value && aiRole.value.trim()) roleParts.push(`あなたは「${aiRole.value.trim()}」の視点から回答してください。`);
 const rolePrefix = roleParts.length ? roleParts.join('\n') + '\n\n' : '';
 
 if (executionMode === 'reverse') {
-  prompt = `${rolePrefix}${intro}「${inputText.value}」というキーワードに対して、常識や前提を逆転させた視点から、思考を促す問いを1つ新たに作成してください。前の問いはリセットし、内容を引き継がないようにしてください。\n\n出力形式は以下のようにしてください：\n問い:（50文字以内で）\n例:（80文字以内の答えを3つ、番号付きで）`;
+  prompt = `${rolePrefix}${intro}「${inputText.value}」というキーワードに対して、常識や前提を逆転させた視点から、思考を促す問いを1つ新たに作成してください。前の問いはリセットし、内容を引き継がないようにしてください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）
+例:（80文字以内の答えを3つ、番号付きで）`;
 }
 
 else if (executionMode === 'expansion') {
-  prompt = `${rolePrefix}${intro}「${inputText.value}」というキーワードについて、関連性を保ちながら、他の分野や用途に応用・拡張することで、思考を促す問いを1つ作成してください。前の問いはリセットし、内容を引き継がないようにしてください。\n\n出力形式は以下のようにしてください：\n問い:（50文字以内で）（応用分野には「」を付ける）\n例:（80文字以内の答えを3つ、番号付きで）`;
+  prompt = `${rolePrefix}${intro}「${inputText.value}」というキーワードについて関連性を保ちながら、他の分野や用途に応用・拡張することで、思考を促す問いを1つ新たに作成してください。前の問いはリセットし、内容を引き継がないようにしてください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）（応用分野には「」を付ける）
+例:（80文字以内の答えを3つ、番号付きで）`;
 }
 
 else if (executionMode === 'associate') {
-  prompt = `${rolePrefix}${intro}「${inputText.value}」というキーワードに対して、キーワード内の単語をひとつ取り出して連想される単語を1つ掛け合わせて、思考を促す問いを1つ作成してください。前の問いはリセットし、内容を引き継がないようにしてください。\n\n出力形式は以下のようにしてください：\n問い:（50文字以内で）（単語には「」を付ける）\n例:（80文字以内の答えを3つ、番号付きで）`;
+  prompt = `${rolePrefix}${intro}「${inputText.value}」というキーワードに対して、キーワード内の単語をひとつを取り出して連想される単語を1つ掛け合わせて、思考を促す問いを1つ新たに作成してください。前の問いはリセットし、内容を引き継がないようにしてください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）（単語には「」を付ける）
+例:（80文字以内の答えを3つ、番号付きで）`;
 }
 
 else if (executionMode === 'perspective') {
-  prompt = `${rolePrefix}${intro}「${inputText.value}」というテーマについて、立場や視点を切り替えて考えることで、思考を促す問いを1つ作成してください。たとえば「子どもだったら？」「外国人だったら？」「動物だったら？」など、視点の転換を活かしてください。前の問いはリセットし、内容を引き継がないようにしてください。\n\n出力形式は以下のようにしてください：\n問い:（50文字以内で）\n例:（80文字以内の答えを3つ、番号付きで）`;
+  prompt = `${rolePrefix}${intro}「${inputText.value}」というテーマについて、立場や視点を切り替えて考えることで、思考を促す問いを1つ作成してください。たとえば「子どもだったら？」「外国人だったら？」「動物だったら？」など、視点の転換を活かしてください。前の問いはリセットし、内容を引き継がないようにしてください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）
+例:（80文字以内の答えを3つ、番号付きで）`;
 }
 
 else if (executionMode === 'future') {
-  prompt = `${rolePrefix}${intro}「${inputText.value}」というテーマについて、未来の技術や社会、価値観の変化を想定しながら、思考を促す問いを1つ作成してください。10年後、50年後など、時間軸をずらして考えてください。前の問いはリセットし、内容を引き継がないようにしてください。\n\n出力形式は以下のようにしてください：\n問い:（50文字以内で）（未来の要素には「」を付ける）\n例:（80文字以内の答えを3つ、番号付きで）`;
+  prompt = `${rolePrefix}${intro}「${inputText.value}」というテーマについて、未来の技術や社会、価値観の変化を想定しながら、思考を促す問いを1つ作成してください。10年後、50年後など、時間軸をずらして考えてください。前の問いはリセットし、内容を引き継がないようにしてください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）（未来の要素には「」を付ける）
+例:（80文字以内の答えを3つ、番号付きで）`;
 }
 
 else if (executionMode === 'constraint') {
-  prompt = `${rolePrefix}${intro}「${inputText.value}」というテーマについて、制限や条件を設けることで、思考を促す問いを1つ作成してください。様々な制約を活かしてください。前の問いはリセットし、内容を引き継がないようにしてください。\n\n出力形式は以下のようにしてください：\n問い:（50文字以内で）（制約には「」を付ける）\n例:（80文字以内の答えを3つ、番号付きで）`;
+  prompt = `${rolePrefix}${intro}「${inputText.value}」というテーマについて、制限や条件を設けることで、思考を促す問いを1つ作成してください。たとえば「予算が○○円しかない」「時間が○○分しかない」「道具が使えない」など、制約を活かしてください。前の問いはリセットし、内容を引き継がないようにしてください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）（制約には「」を付ける）
+例:（80文字以内の答えを3つ、番号付きで）`;
 }
 
 else if (executionMode === 'emotion') {
-  prompt = `${rolePrefix}${intro}「${inputText.value}」というテーマについて、特定の感情（不安・喜び・怒り・期待など）を通して考えることで、思考を促す問いを1つ作成してください。前の問いはリセットし、内容を引き継がないようにしてください。\n\n出力形式は以下のようにしてください：\n問い:（50文字以内で）（感情には「」を付ける）\n例:（80文字以内の答えを3つ、番号付きで）`;
+  prompt = `${rolePrefix}${intro}「${inputText.value}」というテーマについて、特定の感情（不安・喜び・怒り・期待など）を通して考えることで、思考を促す問いを1つ作成してください。前の問いはリセットし、内容を引き継がないようにしてください。
+
+出力形式は以下のようにしてください：
+問い:（50文字以内で）（感情には「」を付ける）
+例:（80文字以内の答えを3つ、番号付きで）`;
 }
 
   
@@ -292,18 +314,6 @@ h1 {
   border-radius: 4px;
 }
 
-.examples-toggle {
-  margin-top: 12px;
-  padding: 8px 12px;
-  font-size: 14px;
-  background: #6c757d;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.examples-toggle:hover { background: #5a6268; }
-
 input[type="text"] {
   width: calc(100% - 24px);
   padding: 12px;
@@ -346,7 +356,7 @@ input[type="text"]:focus {
   transform: translateY(0);
 }
 
-.idea-area, .hint-area, .my-idea-area, .saved-ideas-area {
+.idea-area, .example-area, .my-idea-area, .saved-ideas-area {
   margin-top: 20px;
   padding: 25px;
   background-color: #f9f9f9;
@@ -356,12 +366,12 @@ input[type="text"]:focus {
   line-height: 1.6;
 }
 
-.idea-area h2, .hint-area h2, .my-idea-area h2, .saved-ideas-area h2 {
+.idea-area h2, .example-area h2, .my-idea-area h2, .saved-ideas-area h2 {
     margin-top: 0;
     color: #333;
 }
 
-.hint-area ul, .saved-ideas-area ul {
+.example-area ul, .saved-ideas-area ul {
   padding-left: 20px;
   margin: 0;
   list-style-type: none;
