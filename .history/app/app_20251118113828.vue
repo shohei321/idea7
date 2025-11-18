@@ -4,10 +4,19 @@
 
     <div class="input-area">
       <div class="role-row">
-        <input v-model="userRole" class="role-input" type="text" placeholder="質問者の立場（例：学生・商品企画職）">
-        <input v-model="aiRole" class="role-input" type="text" placeholder="回答者の立場（例：先生・消費者）">
+        <div class="input-with-copy">
+          <input v-model="userRole" class="role-input" type="text" placeholder="質問者の立場（例：学生・商品企画職）">
+          <button v-if="userRole" class="copy-btn-small" title="コピー" @click="copyToClipboard(userRole, '質問者の立場')">📋</button>
+        </div>
+        <div class="input-with-copy">
+          <input v-model="aiRole" class="role-input" type="text" placeholder="回答者の立場（例：先生・消費者）">
+          <button v-if="aiRole" class="copy-btn-small" title="コピー" @click="copyToClipboard(aiRole, '回答者の立場')">📋</button>
+        </div>
       </div>
-      <input v-model="inputText" type="text" placeholder="課題や悩みを入力してください（例：勉強に集中できない）">
+      <div class="input-with-copy">
+        <input v-model="inputText" type="text" placeholder="課題や悩みを入力してください（例：勉強に集中できない）">
+        <button v-if="inputText" class="copy-btn-small" title="コピー" @click="copyToClipboard(inputText, 'キーワード')">📋</button>
+      </div>
     </div>
 
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
@@ -28,7 +37,10 @@
     </div>
 
     <div v-if="generatedIdea && !isLoading" class="idea-area">
-      <h2>問い（{{ currentModeLabel }}）</h2>
+      <div class="section-header">
+        <h2>問い（{{ currentModeLabel }}）</h2>
+        <button class="copy-btn" title="問いをコピー" @click="copyToClipboard(generatedIdea, '問い')">📋 コピー</button>
+      </div>
       <p>{{ generatedIdea }}</p>
       <div v-if="generatedExamples.length">
         <button class="examples-toggle" @click="showExamples = !showExamples">{{ showExamples ? 'ヒントを閉じる' : 'ヒントを見る' }}</button>
@@ -43,7 +55,10 @@
     </div>
 
     <div v-if="generatedIdea" class="my-idea-area">
-      <h2>あなたのアイデア</h2>
+      <div class="section-header">
+        <h2>あなたのアイデア</h2>
+        <button v-if="myIdeaText" class="copy-btn" title="アイデアをコピー" @click="copyToClipboard(myIdeaText, 'アイデア')">📋 コピー</button>
+      </div>
       <textarea v-model="myIdeaText" placeholder="ここにアイデアを入力..." />
       <button @click="saveIdea">登録</button>
     </div>
@@ -53,10 +68,7 @@
       <ul v-if="Object.keys(savedIdeas).length > 0">
         <li v-for="theme in Object.keys(savedIdeas)" :key="theme" :class="{ 'selected-theme': selectedTheme === theme }" @click="selectTheme(theme)">
           {{ theme }}
-          <div class="button-group">
-            <button class="copy-btn-theme" @click.stop="copyThemeData(theme)">📋 コピー</button>
-            <button class="delete-btn" @click.stop="deleteTheme(theme)">テーマ削除</button>
-          </div>
+          <button class="delete-btn" @click.stop="deleteTheme(theme)">テーマ削除</button>
         </li>
       </ul>
       <p v-else>まだ保存されたテーマはありません。</p>
@@ -95,24 +107,10 @@ const userRole = ref('');
 const aiRole = ref('');
 const showExamples = ref(false);
 
-const copyThemeData = async (theme) => {
-  const ideas = savedIdeas.value[theme];
-  if (!ideas || ideas.length === 0) return;
-
-  let copyText = `テーマ: ${theme}\n\n`;
-
-  ideas.forEach((idea, index) => {
-    copyText += `=== アイデア ${index + 1} ===\n`;
-    if (idea.userRole) copyText += `質問者の立場: ${idea.userRole}\n`;
-    if (idea.aiRole) copyText += `回答者の立場: ${idea.aiRole}\n`;
-    if (idea.keyword) copyText += `キーワード: ${idea.keyword}\n`;
-    copyText += `問い（${idea.mode}）: ${idea.question}\n`;
-    copyText += `アイデア: ${idea.text}\n\n`;
-  });
-
+const copyToClipboard = async (text, label) => {
   try {
-    await navigator.clipboard.writeText(copyText);
-    alert(`テーマ「${theme}」の全アイデアをコピーしました`);
+    await navigator.clipboard.writeText(text);
+    alert(`${label}をコピーしました`);
   } catch (err) {
     console.error('コピーに失敗しました:', err);
     alert('コピーに失敗しました');
@@ -237,10 +235,7 @@ const saveIdea = () => {
   savedIdeas.value[currentTheme.value].unshift({
     question: generatedIdea.value,
     text: myIdeaText.value,
-    mode: currentModeLabel.value,
-    userRole: userRole.value,
-    aiRole: aiRole.value,
-    keyword: currentTheme.value
+    mode: currentModeLabel.value
   });
   myIdeaText.value = '';
 };
@@ -316,10 +311,65 @@ h1 {
 }
 
 .role-input {
-  width: calc(50% - 6px);
+  flex: 1;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+
+.input-with-copy {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+
+.input-with-copy input[type="text"] {
+  width: 100%;
+}
+
+.copy-btn-small {
+  padding: 6px 8px;
+  font-size: 16px;
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.3s;
+}
+
+.copy-btn-small:hover {
+  background: #5a6268;
+}
+
+.copy-btn {
+  padding: 6px 12px;
+  font-size: 14px;
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.3s;
+}
+
+.copy-btn:hover {
+  background: #5a6268;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.section-header h2 {
+  margin: 0;
 }
 
 .examples-toggle {
@@ -472,27 +522,6 @@ input[type="text"]:focus {
   justify-content: space-between;
   align-items: center;
   transition: background-color 0.2s;
-}
-
-.button-group {
-  display: flex;
-  gap: 8px;
-}
-
-.copy-btn-theme {
-  padding: 5px 10px;
-  font-size: 12px;
-  color: #fff;
-  background-color: #6c757d;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  white-space: nowrap;
-}
-
-.copy-btn-theme:hover {
-  background-color: #5a6268;
 }
 
 .saved-ideas-area ul li:hover {

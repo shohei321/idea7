@@ -7,7 +7,7 @@
         <input v-model="userRole" class="role-input" type="text" placeholder="質問者の立場（例：学生・商品企画職）">
         <input v-model="aiRole" class="role-input" type="text" placeholder="回答者の立場（例：先生・消費者）">
       </div>
-      <input v-model="inputText" type="text" placeholder="課題や悩みを入力してください（例：勉強に集中できない）">
+      <input type="text" v-model="inputText" placeholder="課題や悩みを入力してください（例：勉強に集中できない）">
     </div>
 
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
@@ -44,19 +44,16 @@
 
     <div v-if="generatedIdea" class="my-idea-area">
       <h2>あなたのアイデア</h2>
-      <textarea v-model="myIdeaText" placeholder="ここにアイデアを入力..." />
+  <textarea v-model="myIdeaText" placeholder="ここにアイデアを入力..." />
       <button @click="saveIdea">登録</button>
     </div>
 
     <div class="saved-ideas-area">
       <h2>テーマ一覧</h2>
       <ul v-if="Object.keys(savedIdeas).length > 0">
-        <li v-for="theme in Object.keys(savedIdeas)" :key="theme" :class="{ 'selected-theme': selectedTheme === theme }" @click="selectTheme(theme)">
+        <li v-for="theme in Object.keys(savedIdeas)" :key="theme" @click="selectTheme(theme)" :class="{ 'selected-theme': selectedTheme === theme }">
           {{ theme }}
-          <div class="button-group">
-            <button class="copy-btn-theme" @click.stop="copyThemeData(theme)">📋 コピー</button>
-            <button class="delete-btn" @click.stop="deleteTheme(theme)">テーマ削除</button>
-          </div>
+          <button @click.stop="deleteTheme(theme)" class="delete-btn">テーマ削除</button>
         </li>
       </ul>
       <p v-else>まだ保存されたテーマはありません。</p>
@@ -69,7 +66,7 @@
               <strong class="question">問い（{{ idea.mode }}）: {{ idea.question }}</strong>
               <p class="answer">アイデア: {{ idea.text }}</p>
             </div>
-            <button class="delete-btn" @click.stop="deleteIdea(selectedTheme, index)">削除</button>
+            <button @click.stop="deleteIdea(selectedTheme, index)" class="delete-btn">削除</button>
           </li>
         </ul>
       </div>
@@ -94,30 +91,6 @@ const currentModeLabel = ref('');
 const userRole = ref('');
 const aiRole = ref('');
 const showExamples = ref(false);
-
-const copyThemeData = async (theme) => {
-  const ideas = savedIdeas.value[theme];
-  if (!ideas || ideas.length === 0) return;
-
-  let copyText = `テーマ: ${theme}\n\n`;
-
-  ideas.forEach((idea, index) => {
-    copyText += `=== アイデア ${index + 1} ===\n`;
-    if (idea.userRole) copyText += `質問者の立場: ${idea.userRole}\n`;
-    if (idea.aiRole) copyText += `回答者の立場: ${idea.aiRole}\n`;
-    if (idea.keyword) copyText += `キーワード: ${idea.keyword}\n`;
-    copyText += `問い（${idea.mode}）: ${idea.question}\n`;
-    copyText += `アイデア: ${idea.text}\n\n`;
-  });
-
-  try {
-    await navigator.clipboard.writeText(copyText);
-    alert(`テーマ「${theme}」の全アイデアをコピーしました`);
-  } catch (err) {
-    console.error('コピーに失敗しました:', err);
-    alert('コピーに失敗しました');
-  }
-};
 
 const generateIdea = async (mode) => {
   if (!inputText.value) {
@@ -237,10 +210,7 @@ const saveIdea = () => {
   savedIdeas.value[currentTheme.value].unshift({
     question: generatedIdea.value,
     text: myIdeaText.value,
-    mode: currentModeLabel.value,
-    userRole: userRole.value,
-    aiRole: aiRole.value,
-    keyword: currentTheme.value
+    mode: currentModeLabel.value
   });
   myIdeaText.value = '';
 };
@@ -472,27 +442,6 @@ input[type="text"]:focus {
   justify-content: space-between;
   align-items: center;
   transition: background-color 0.2s;
-}
-
-.button-group {
-  display: flex;
-  gap: 8px;
-}
-
-.copy-btn-theme {
-  padding: 5px 10px;
-  font-size: 12px;
-  color: #fff;
-  background-color: #6c757d;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  white-space: nowrap;
-}
-
-.copy-btn-theme:hover {
-  background-color: #5a6268;
 }
 
 .saved-ideas-area ul li:hover {

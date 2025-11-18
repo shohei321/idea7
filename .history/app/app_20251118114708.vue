@@ -95,6 +95,16 @@ const userRole = ref('');
 const aiRole = ref('');
 const showExamples = ref(false);
 
+const copyToClipboard = async (text, label) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    alert(`${label}をコピーしました`);
+  } catch (err) {
+    console.error('コピーに失敗しました:', err);
+    alert('コピーに失敗しました');
+  }
+};
+
 const copyThemeData = async (theme) => {
   const ideas = savedIdeas.value[theme];
   if (!ideas || ideas.length === 0) return;
